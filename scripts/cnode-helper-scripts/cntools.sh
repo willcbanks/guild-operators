@@ -1214,6 +1214,7 @@ case $OPERATION in
     meta_ticker="${pool_name}" # default ticker
     meta_description="No Description" #default Description
     meta_homepage="https://foo.com" #default homepage
+    meta_extended="https://foo.com/metadata/extended.json" #default extended
     meta_json_url="https://foo.bat/poolmeta.json" #default JSON
     pool_meta_file=${POOL_FOLDER}/${pool_name}/poolmeta.json
     if [[ -f "${pool_config}" ]]; then
@@ -1250,6 +1251,7 @@ case $OPERATION in
         meta_ticker=$(jq -r .ticker "${pool_meta_file}")
         meta_homepage=$(jq -r .homepage "${pool_meta_file}")
         meta_description=$(jq -r .description "${pool_meta_file}")
+        meta_extended=$(jq -r .extended "${pool_meta_file}")
       fi
 
       read -r -p "Enter Pool's Name (default: ${meta_name}): " name_enter
@@ -1280,9 +1282,29 @@ case $OPERATION in
         say "${RED}ERROR${NC}: invalid URL format or more than 64 chars in length"
         waitForInput && continue
       fi
-
+      say "\nOptionally set an extended metadata URL?\n"
+      case $(select_opt "[n] No" "[y] Yes") in
+        0) meta_extended=""
+           ;;
+        1) read -r -p "Enter URL to extended metadata (default: ${meta_extended}): " extended_enter
+          extended_enter="${extended_enter}"
+          if [[ -n "${extended_enter}" ]]; then
+            meta_extended="${extended_enter}"
+          fi
+          if [[ ! "${meta_extended}" =~ https?://.* || ${#meta_extended} -gt 64 ]]; then
+            say "${RED}ERROR${NC}: invalid extended URL format or more than 64 chars in length"
+            waitForInput && continue
+          else
+            meta_extended_option=",\n\"extended\":\"${meta_extended}\"" 
+          fi
+      esac
+      meta_all="{\"name\":\"${meta_name}\",\n\"ticker\":\"${meta_ticker}\",\n\"description\":\"${meta_description}\",\n\"homepage\":\"${meta_homepage}\"${meta_extended_option}}"
+      if [[ ${#meta_all} -gt 512 ]]; then
+        say "${RED}ERROR${NC}: Total metadata size cannot exceed 512 chars in length"
+        waitForInput && continue
+      fi
       say "\n${ORANGE}Please host file ${pool_meta_file} as-is at ${meta_json_url} :${NC}\n"
-      say "{\n  \"name\": \"${meta_name}\",\n  \"ticker\": \"${meta_ticker}\",\n  \"description\": \"${meta_description}\",\n  \"homepage\": \"${meta_homepage}\"\n}" | tee "${pool_meta_file}"
+      say ${meta_all} | tee "${pool_meta_file}"
       waitForInput "Press any key to proceed with registration after metadata file is made available at ${meta_json_url}"
     fi
 
@@ -1649,6 +1671,7 @@ case $OPERATION in
         meta_ticker=$(jq -r .ticker "${pool_meta_file}")
         meta_homepage=$(jq -r .homepage "${pool_meta_file}")
         meta_description=$(jq -r .description "${pool_meta_file}")
+        meta_extended=$(jq -r .extended "${pool_meta_file}")
       fi
 
       read -r -p "Enter Pool's Name (default: ${meta_name}): " name_enter
@@ -1679,9 +1702,29 @@ case $OPERATION in
         say "${RED}ERROR${NC}: invalid URL format or more than 64 chars in length"
         waitForInput && continue
       fi
-
-      say "\n${ORANGE}Please host ${pool_meta_file} as-is at ${meta_json_url} :${NC}\n"
-      say "{\n  \"name\": \"${meta_name}\",\n  \"ticker\": \"${meta_ticker}\",\n  \"description\": \"${meta_description}\",\n  \"homepage\": \"${meta_homepage}\"\n}" | tee "${pool_meta_file}"
+      say "\nOptionally set an extended metadata URL?\n"
+      case $(select_opt "[n] No" "[y] Yes") in
+        0) meta_extended=""
+           ;;
+        1) read -r -p "Enter URL to extended metadata (default: ${meta_extended}): " extended_enter
+          extended_enter="${extended_enter}"
+          if [[ -n "${extended_enter}" ]]; then
+            meta_extended="${extended_enter}"
+          fi
+          if [[ ! "${meta_extended}" =~ https?://.* || ${#meta_extended} -gt 64 ]]; then
+            say "${RED}ERROR${NC}: invalid extended URL format or more than 64 chars in length"
+            waitForInput && continue
+          else
+            meta_extended_option=",\n\"extended\":\"${meta_extended}\"" 
+          fi
+      esac
+      meta_all="{\"name\":\"${meta_name}\",\n\"ticker\":\"${meta_ticker}\",\n\"description\":\"${meta_description}\",\n\"homepage\":\"${meta_homepage}\"${meta_extended_option}}"
+      if [[ ${#meta_all} -gt 512 ]]; then
+        say "${RED}ERROR${NC}: Total metadata size cannot exceed 512 chars in length"
+        waitForInput && continue
+      fi
+      say "\n${ORANGE}Please host file ${pool_meta_file} as-is at ${meta_json_url} :${NC}\n"
+      say ${meta_all} | tee "${pool_meta_file}"
       waitForInput "Press any key to proceed with re-registration after metadata file is made available at ${meta_json_url}"
     fi
 
