@@ -131,11 +131,12 @@ function selectOption {
   print_selected()   { printf " $ESC[7m $1 $ESC[27m$2"; }
   get_cursor_row()   { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
   key_input()        { read -rsn1 key   # get 1 character
-                       # if [[ $key == $ESC ]]; then
-                       #   read -rsn2 key # read 2 more chars
-                       # fi
-                         if [[ $key = "[A" ]]; then echo up;
-                       elif [[ $key = "[B" ]]; then echo down;
+                       if [[ $key == $ESC ]]; then
+                         read -rsn2 -t 1 key2 # read 2 more chars with timeout
+                       fi
+                       if [[ $key2 = "[A" ]]; then echo up;
+                       elif [[ $key2 = "[B" ]]; then echo down;
+                       elif [[ $key == $ESC && $key2 = "" ]]; then echo $ESC;
                        elif [[ $key = ""   ]]; then echo enter;
                        else echo $key; fi; }
   opt_shortcut()     { [[ "$1" =~ ^\[([[:alnum:]])\].* ]] && echo ${BASH_REMATCH[1]}; }
